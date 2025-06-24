@@ -1,0 +1,79 @@
+/* Custom styles for carousel dots */
+.custom-carousel-dots li button {
+  background: #1890ff !important;
+  opacity: 0.4;
+}
+
+.custom-carousel-dots li.slick-active button {
+  opacity: 1;
+  background: #1890ff !important;
+}
+
+/* Animation for feature cards */
+.ant-card {
+  transition: all 0.3s ease-in-out;
+}
+
+.ant-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth scrolling behavior for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(90deg, #1890ff, #722ed1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+/* Media queries for better responsiveness */
+@media (max-width: 576px) {
+  .hero-title {
+    font-size: 32px !important;
+  }
+  
+  .hero-subtitle {
+    font-size: 16px !important;
+  }
+  
+  .cta-buttons .ant-btn {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+}
+
+/* Add more animations and interactions */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.floating-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Enhance mobile navigation */
+.mobile-menu-drawer .ant-drawer-body {
+  padding: 0;
+}
+
+.mobile-menu-drawer .ant-menu-item {
+  margin: 0 !important;
+  height: 50px;
+  line-height: 50px;
+  font-size: 16px;
+}

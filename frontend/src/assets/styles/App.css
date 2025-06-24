@@ -1,0 +1,172 @@
+/* Layout Styles */
+.ant-layout {
+  min-height: 100vh;
+}
+
+.ant-layout-header {
+  padding: 0 24px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 1;
+  height: 64px;
+  line-height: 64px;
+}
+
+.ant-layout-content {
+  background: #f0f2f5;
+}
+
+.ant-layout-footer {
+  background: #f0f2f5;
+  padding: 24px;
+  text-align: center;
+}
+
+/* Sidebar Styles */
+.logo {
+  height: 32px;
+  margin: 16px;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.site-layout-background {
+  background: #fff;
+}
+
+/* Content Styles */
+.site-layout-content {
+  min-height: 280px;
+  padding: 24px;
+  background: #fff;
+}
+
+.inner-content {
+  padding: 24px;
+  background: #fff;
+  min-height: 360px;
+}
+
+/* Card Styles */
+.card-container {
+  margin-bottom: 16px;
+}
+
+.clickable-card {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.clickable-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Form Styles */
+.form-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Button Styles */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* Avatar Styles */
+.avatar-large {
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  border-radius: 50%;
+  font-size: 32px;
+}
+
+/* Timeline Styles */
+.status-timeline .ant-timeline-item-head {
+  width: 16px;
+  height: 16px;
+}
+
+/* Table Styles */
+.custom-table .ant-table-thead > tr > th {
+  background-color: #fafafa;
+}
+
+.custom-table .ant-table-tbody > tr:hover > td {
+  background-color: #e6f7ff;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .ant-layout-header {
+    padding: 0 12px;
+  }
+  
+  .site-layout-content {
+    padding: 12px;
+  }
+  
+  .ant-statistic-title {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .responsive-hide-sm {
+    display: none;
+  }
+  
+  .ant-card-head-title {
+    font-size: 14px;
+  }
+}
+
+/* Animation Styles */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Dashboard Widgets */
+.dashboard-stat-card {
+  border-radius: 8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.dashboard-stat-card .ant-card-body {
+  padding: 20px;
+}
+
+/* Notification Badge */
+.notification-badge .ant-badge-count {
+  box-shadow: 0 0 0 1px #fff;
+}
+
+/* Status Tags */
+.status-tag {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 11px;
+}
+
+/* Chart Containers */
+.chart-container {
+  height: 300px;
+  padding: 16px;
+}
