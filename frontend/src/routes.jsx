@@ -26,6 +26,8 @@ import ReportsPage from './pages/admin/ReportsPage';
 import CategoriesPage from './pages/admin/CategoriesPage';
 import UsersPage from './pages/admin/UsersPage';
 import HomePage from './pages/HomePage';
+import AdminComplaintDetailPage from './pages/admin/ComplaintDetailPage';
+
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -34,29 +36,58 @@ const AppRoutes = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<HomePage></HomePage>} />
-      
+         <Route path="/admin/complaints-details" element={<AdminComplaintDetailPage></AdminComplaintDetailPage>} />
       {/* Auth Routes */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
-        {/* User Routes */}      
-      <Route element={<UserLayout />}>
+      
+      {/* User Routes */}
+      <Route 
+        element={
+          <ProtectedRoute
+            isAllowed={!!user && user.role === 'user'}
+            redirectPath="/login"
+          >
+            <UserLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/dashboard" element={<UserDashboardPage />} />
         <Route path="/new-complaint" element={<NewComplaintPage />} />
         <Route path="/complaints" element={<ComplaintHistoryPage />} />
         <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
-        {/* Admin Routes */}
-      <Route element={<AdminLayout />}>
+      
+      {/* Admin Routes */}
+      <Route 
+        element={
+          <ProtectedRoute
+            isAllowed={!!user && user.role === 'admin'}
+            redirectPath="/login"
+          >
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/complaints" element={<ComplaintsPage />} />
         <Route path="/admin/staff" element={<StaffPage />} />
         <Route path="/admin/reports" element={<ReportsPage />} />
         <Route path="/admin/categories" element={<CategoriesPage />} />
+      
         <Route path="/admin/users" element={<UsersPage />} />
       </Route>
+      
+      {/* Redirect based on role */}
+      <Route path="/" element={
+        <Navigate to={
+          !user ? "/login" : 
+          user.role === 'admin' ? "/admin/dashboard" : "/dashboard"
+        } replace />
+      } />
       
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -66,13 +97,6 @@ const AppRoutes = () => {
 
 // Protected Route component
 const ProtectedRoute = ({ isAllowed, redirectPath, children }) => {
-  const { isInitialized } = useAuth();
-  
-  // Show nothing until auth is initialized
-  if (!isInitialized) {
-    return <div className="loading">Loading...</div>;
-  }
-  
   if (!isAllowed) {
     return <Navigate to={redirectPath} replace />;
   }

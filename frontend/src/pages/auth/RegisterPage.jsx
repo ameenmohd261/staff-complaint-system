@@ -24,33 +24,21 @@ const RegisterPage = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-    const onFinish = async (values) => {
+  
+  const onFinish = async (values) => {
     setLoading(true);
     try {
       // Remove confirm password field
       const { confirmPassword, ...userData } = values;
-        // IMPORTANT: Explicitly set role to 'employee' (backend only accepts 'employee' or 'admin')
-      // The backend registration tries to set 'user' which causes a validation error
-      userData.role = 'employee';
       
-      console.log('Registering user with data:', { ...userData, password: '[REDACTED]' });
+      // Set default role to user
+      userData.role = 'user';
       
-      const user = await register(userData);
-      console.log('Registration successful:', user);
-      
-      // Use App's message API to avoid the antd warning
-      setTimeout(() => {
-        message.success('Registration successful!');
-      }, 100);
-      
-      navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard');
+      await register(userData);
+      message.success('Registration successful!');
+      navigate('/dashboard');
     } catch (error) {
-      console.error('Registration error:', error);
-      
-      // Use App's message API to avoid the antd warning
-      setTimeout(() => {
-        message.error(error.message || 'Registration failed. Please try again.');
-      }, 100);
+      message.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }

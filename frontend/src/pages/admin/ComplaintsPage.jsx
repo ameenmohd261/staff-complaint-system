@@ -149,14 +149,16 @@ const ComplaintsPage = () => {
     });
     setAssignModalVisible(true);
   };
-    // Handle assign staff
+  
+  // Handle assign staff
   const handleAssignStaff = async () => {
     try {
       const values = await assignForm.validateFields();
       setAssigning(true);
       
-      // Use the specific assign complaint API endpoint
-      await complaintService.assignComplaint(currentComplaint.id, values.assignedTo);
+      await updateComplaint(currentComplaint.id, {
+        assignedTo: values.assignedTo
+      });
       
       notification.success({
         message: 'Complaint Assigned',
@@ -183,18 +185,16 @@ const ComplaintsPage = () => {
     });
     setStatusModalVisible(true);
   };
-    // Handle status update
+  
+  // Handle status update
   const handleStatusUpdate = async () => {
     try {
       const values = await statusForm.validateFields();
       setUpdatingStatus(true);
       
-      // Use the specific status update API endpoint
-      await complaintService.updateComplaintStatus(
-        currentComplaint.id,
-        values.status,
-        values.remarks // Add remarks field
-      );
+      await updateComplaint(currentComplaint.id, {
+        status: values.status
+      });
       
       const newStatus = getStatusInfo(values.status);
       
@@ -214,7 +214,8 @@ const ComplaintsPage = () => {
       setUpdatingStatus(false);
     }
   };
-    // Handle delete complaint
+  
+  // Handle delete complaint
   const showDeleteConfirm = (complaintId) => {
     confirm({
       title: 'Are you sure you want to delete this complaint?',
@@ -225,19 +226,12 @@ const ComplaintsPage = () => {
       cancelText: 'No',
       async onOk() {
         try {
-          // Call API to delete complaint
-          await complaintService.deleteComplaint(complaintId);
-          
-          // Update local state by removing the deleted complaint
-          setComplaints(complaints.filter(c => c.id !== complaintId));
-          setFilteredData(filteredData.filter(c => c.id !== complaintId));
-          
+          await deleteComplaint(complaintId);
           notification.success({
             message: 'Complaint Deleted',
             description: 'Complaint has been deleted successfully'
           });
         } catch (error) {
-          console.error('Error deleting complaint:', error);
           notification.error({
             message: 'Delete Failed',
             description: error.message || 'Failed to delete complaint'
@@ -529,7 +523,8 @@ const ComplaintsPage = () => {
         <Form
           form={statusForm}
           layout="vertical"
-        >          <Form.Item
+        >
+          <Form.Item
             name="status"
             label="Select Status"
             rules={[{ required: true, message: 'Please select a status' }]}
@@ -541,17 +536,6 @@ const ComplaintsPage = () => {
                 </Option>
               ))}
             </Select>
-          </Form.Item>
-          
-          <Form.Item
-            name="remarks"
-            label="Remarks"
-            tooltip="Optional notes about this status change"
-          >
-            <Input.TextArea 
-              placeholder="Add any remarks about this status change" 
-              rows={3}
-            />
           </Form.Item>
         </Form>
       </Modal>

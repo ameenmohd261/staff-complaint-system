@@ -9,7 +9,6 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "proxy": "http://localhost:5000",
   "dependencies": {
     "@ant-design/compatible": "^5.1.4",
     "@ant-design/icons": "^6.0.0",

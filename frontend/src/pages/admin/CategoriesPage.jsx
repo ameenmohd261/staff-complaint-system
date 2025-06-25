@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Table, Typography, Space, Button, Input, Card, 
   Modal, Form, Popconfirm, Badge, notification,
@@ -9,7 +9,6 @@ import {
   ExclamationCircleOutlined, SearchOutlined
 } from '@ant-design/icons';
 import { useApp } from '../../contexts/AppContext';
-import { complaintService } from '../../services/complaintService';
 import styled from 'styled-components';
 
 const { Title, Text } = Typography;
@@ -35,33 +34,18 @@ const TableHeader = styled.div`
 `;
 
 const CategoriesPage = () => {
-  const { complaints, loading: appLoading } = useApp();
-    // States for data
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { 
+    categories, 
+    complaints,
+    addCategory, 
+    updateCategory, 
+    deleteCategory,
+    loading 
+  } = useApp();
   
   // States for filtering
   const [searchText, setSearchText] = useState('');
-  const [filteredData, setFilteredData] = useState([]);
-  
-  // Fetch categories from API
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await complaintService.getAllCategories();
-        console.log('CategoriesPage - Categories fetched:', data);
-        console.log('CategoriesPage - First category structure:', data[0] ? JSON.stringify(data[0]) : 'No categories');
-        setCategories(data);
-        setFilteredData(data);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchCategories();
-  }, []);
+  const [filteredData, setFilteredData] = useState(categories);
   
   // State for category modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -81,12 +65,13 @@ const CategoriesPage = () => {
         (category.description && category.description.toLowerCase().includes(searchText.toLowerCase()))
       );
     }
-      setFilteredData(result);
+    
+    setFilteredData(result);
   }, [categories, searchText]);
   
   // Get complaint count for each category
   const getCategoryCount = (categoryId) => {
-    return complaints.filter(complaint => complaint.category === categoryId || complaint.categoryId === categoryId).length;
+    return complaints.filter(complaint => complaint.categoryId === categoryId).length;
   };
   
   // Open modal for adding new category
@@ -108,7 +93,8 @@ const CategoriesPage = () => {
       name: category.name,
       description: category.description
     });
-      setModalVisible(true);
+    
+    setModalVisible(true);
   };
   
   // Handle form submit
@@ -118,22 +104,13 @@ const CategoriesPage = () => {
       setSubmitting(true);
       
       if (modalMode === 'add') {
-        // Call API to create category
-        const newCategory = await complaintService.createCategory(values);
-        
-        // Update local state with new category
-        setCategories([...categories, newCategory]);
-          notification.success({
+        await addCategory(values);
+        notification.success({
           message: 'Category Added',
           description: 'New category has been added successfully'
         });
       } else {
-        // Call API to update category
-        const updatedCategory = await complaintService.updateCategory(currentCategory._id, values);
-        
-        // Update local state with updated category
-        setCategories(categories.map(cat => cat._id === currentCategory._id ? updatedCategory : cat));
-        
+        await updateCategory(currentCategory.id, values);
         notification.success({
           message: 'Category Updated',
           description: 'Category has been updated successfully'
@@ -147,7 +124,8 @@ const CategoriesPage = () => {
         message: modalMode === 'add' ? 'Add Failed' : 'Update Failed',
         description: error.message || 'Failed to save category'
       });
-    } finally {      setSubmitting(false);
+    } finally {
+      setSubmitting(false);
     }
   };
   
@@ -163,18 +141,13 @@ const CategoriesPage = () => {
       return;
     }
     
-    try {      // Call API to delete category
-      await complaintService.deleteCategory(categoryId);
-      
-      // Update local state by removing the deleted category
-      setCategories(categories.filter(cat => cat._id !== categoryId));
-      
+    try {
+      await deleteCategory(categoryId);
       notification.success({
         message: 'Category Deleted',
         description: 'Category has been deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting category:', error);
       notification.error({
         message: 'Delete Failed',
         description: error.message || 'Failed to delete category'
@@ -184,14 +157,15 @@ const CategoriesPage = () => {
   
   // Define table columns
   const columns = [
-    {      title: 'Name',
+    {
+      title: 'Name',
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
         <Space>
           {text}
-          {getCategoryCount(record._id) > 0 && (
-            <Badge count={getCategoryCount(record._id)} overflowCount={999} />
+          {getCategoryCount(record.id) > 0 && (
+            <Badge count={getCategoryCount(record.id)} overflowCount={999} />
           )}
         </Space>
       ),
@@ -202,10 +176,11 @@ const CategoriesPage = () => {
       key: 'description',
       ellipsis: true,
     },
-    {      title: 'Complaints',
+    {
+      title: 'Complaints',
       key: 'complaints',
       render: (_, record) => {
-        const count = getCategoryCount(record._id);
+        const count = getCategoryCount(record.id);
         return (
           <Tag color={count > 0 ? '#1890ff' : '#d9d9d9'}>
             {count} {count === 1 ? 'complaint' : 'complaints'}
@@ -221,20 +196,21 @@ const CategoriesPage = () => {
         <Space>
           <Button 
             type="text" 
-            icon={<EditOutlined />}            onClick={() => showEditModal(record)} 
+            icon={<EditOutlined />} 
+            onClick={() => showEditModal(record)} 
           />
           <Popconfirm
             title="Are you sure you want to delete this category?"
-            onConfirm={() => handleDelete(record._id)}
+            onConfirm={() => handleDelete(record.id)}
             okText="Yes"
             cancelText="No"
-            disabled={getCategoryCount(record._id) > 0}
+            disabled={getCategoryCount(record.id) > 0}
           >
             <Button 
               type="text" 
               danger 
               icon={<DeleteOutlined />} 
-              disabled={getCategoryCount(record._id) > 0}
+              disabled={getCategoryCount(record.id) > 0}
             />
           </Popconfirm>
         </Space>
@@ -263,12 +239,13 @@ const CategoriesPage = () => {
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
             allowClear
-          />        </TableHeader>
+          />
+        </TableHeader>
         
         <Table
           columns={columns}
           dataSource={filteredData}
-          rowKey="_id"
+          rowKey="id"
           loading={loading}
           pagination={{
             pageSize: 10,

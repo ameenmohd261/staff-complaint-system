@@ -51,7 +51,7 @@ const StaffPage = () => {
   
   // State for staff modal
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalTitle, setModalTitle] = useState('Add New Employee');
+  const [modalTitle, setModalTitle] = useState('Add New Staff Member');
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [currentStaff, setCurrentStaff] = useState(null);
   const [form] = Form.useForm();
@@ -78,7 +78,7 @@ const StaffPage = () => {
   
   // Open modal for adding new staff
   const showAddModal = () => {
-    setModalTitle('Add New Employee');
+    setModalTitle('Add New Staff Member');
     setModalMode('add');
     setCurrentStaff(null);
     form.resetFields();
@@ -108,17 +108,20 @@ const StaffPage = () => {
       const values = await form.validateFields();
       setSubmitting(true);
       
-      if (modalMode === 'add') {        // Add password for new staff
-        values.password = 'employee123'; // Default password
+      if (modalMode === 'add') {
+        // Add password for new staff
+        values.password = 'staff123'; // Default password
         
-        await addStaffMember(values);        notification.success({
-          message: 'Employee Added',
-          description: 'New employee has been added successfully'
+        await addStaffMember(values);
+        notification.success({
+          message: 'Staff Added',
+          description: 'New staff member has been added successfully'
         });
       } else {
-        await updateStaffMember(currentStaff.id, values);        notification.success({
-          message: 'Employee Updated',
-          description: 'Employee has been updated successfully'
+        await updateStaffMember(currentStaff.id, values);
+        notification.success({
+          message: 'Staff Updated',
+          description: 'Staff member has been updated successfully'
         });
       }
       
@@ -127,7 +130,7 @@ const StaffPage = () => {
       console.error('Error saving staff:', error);
       notification.error({
         message: modalMode === 'add' ? 'Add Failed' : 'Update Failed',
-        description: error.message || 'Failed to save employee'
+        description: error.message || 'Failed to save staff member'
       });
     } finally {
       setSubmitting(false);
@@ -137,14 +140,15 @@ const StaffPage = () => {
   // Handle staff deletion
   const handleDelete = async (staffId) => {
     try {
-      await deleteStaffMember(staffId);      notification.success({
-        message: 'Employee Deleted',
-        description: 'Employee has been deleted successfully'
+      await deleteStaffMember(staffId);
+      notification.success({
+        message: 'Staff Deleted',
+        description: 'Staff member has been deleted successfully'
       });
     } catch (error) {
       notification.error({
         message: 'Delete Failed',
-        description: error.message || 'Failed to delete employee'
+        description: error.message || 'Failed to delete staff member'
       });
     }
   };
@@ -170,7 +174,8 @@ const StaffPage = () => {
     {
       title: 'Role',
       dataIndex: 'role',
-      key: 'role',      render: role => {
+      key: 'role',
+      render: role => {
         const color = role === 'admin' ? '#722ed1' : '#1890ff';
         return <Tag color={color}>{role}</Tag>;
       },
@@ -245,8 +250,9 @@ const StaffPage = () => {
               allowClear
               value={roleFilter}
               onChange={setRoleFilter}
-            >              <Option value="admin">Admin</Option>
-              <Option value="employee">Employee</Option>
+            >
+              <Option value="admin">Admin</Option>
+              <Option value="staff">Staff</Option>
             </Select>
           </Space>
         </TableHeader>
@@ -259,9 +265,9 @@ const StaffPage = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} employees`,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} staff members`,
           }}
-          locale={{ emptyText: 'No employees found' }}
+          locale={{ emptyText: 'No staff members found' }}
         />
       </StyledCard>
       
@@ -311,9 +317,10 @@ const StaffPage = () => {
             name="role"
             label="Role"
             rules={[{ required: true, message: 'Please select a role' }]}
-          >            <Select placeholder="Select role">
+          >
+            <Select placeholder="Select role">
               <Option value="admin">Admin</Option>
-              <Option value="employee">Employee</Option>
+              <Option value="staff">Staff</Option>
             </Select>
           </Form.Item>
           
