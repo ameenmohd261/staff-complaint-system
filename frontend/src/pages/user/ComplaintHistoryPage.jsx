@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, Typography, Tag, Button, Input, Select,
   DatePicker, Card
@@ -9,6 +9,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { complaintService } from '../../services/complaintService';
 import styled from 'styled-components';
 import moment from 'moment';
 
@@ -52,23 +53,40 @@ const StatusTag = styled(Tag)`
 `;
 
 const ComplaintHistoryPage = () => {
-  const { complaints, categories, statuses, loading } = useApp();
+  const { categories, statuses, loading: appLoading } = useApp();
   const { user } = useAuth();
-  
-  // Filter complaints for current user
-  const userComplaints = complaints.filter(complaint => complaint.userId === user.id);
-  
-  // States for filtering and sorting
-  // States for filtering and sorting
+  const [userComplaints, setUserComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
+    // Fetch complaints for current user
+  useEffect(() => {
+    const fetchMyComplaints = async () => {
+      try {
+        if (user && user.id) {
+          const data = await complaintService.getUserComplaints(user.id);
+          setUserComplaints(data);
+          setFilteredData(data); // Initialize filtered data
+        }
+      } catch (error) {
+        console.error('Failed to fetch complaints:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (!appLoading) {
+      fetchMyComplaints();
+    }
+  }, [user, appLoading]);
+    // States for filtering and sorting
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [dateRange, setDateRange] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
+  
   // Apply filters
-  // Apply filters
-  React.useEffect(() => {
-    if (!complaints.length) return;
+  useEffect(() => {
+    if (!userComplaints.length) return;
     
     let result = [...userComplaints];
     
@@ -93,12 +111,10 @@ const ComplaintHistoryPage = () => {
         return complaintDate.isAfter(dateRange[0]) && complaintDate.isBefore(dateRange[1]);
       });
     }
-    
-    // Sort by created date (newest first)
+      // Sort by created date (newest first)
     result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    setFilteredData(result);
-  }, [complaints, userComplaints, searchText, statusFilter, categoryFilter, dateRange]);
+      setFilteredData(result);
+  }, [userComplaints, searchText, statusFilter, categoryFilter, dateRange]);
   // Helper function to get status name and color
   const getStatusInfo = (statusId) => {
     const status = statuses.find(s => s.id === statusId);

@@ -121,7 +121,7 @@ const AdminLayout = () => {
     },
     {
       key: '3',
-      label: 'Staff assignment pending',
+      label: 'Employee assignment pending',
     },
   ];
   
@@ -165,10 +165,9 @@ const AdminLayout = () => {
               label: 'Complaints',
               onClick: () => navigate('/admin/complaints'),
             },
-            {
-              key: '/admin/staff',
+            {              key: '/admin/staff',
               icon: <TeamOutlined />,
-              label: 'Staff Management',
+              label: 'Employee Management',
               onClick: () => navigate('/admin/staff'),
             },
             {

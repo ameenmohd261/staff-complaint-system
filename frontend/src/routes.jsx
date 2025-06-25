@@ -40,36 +40,16 @@ const AppRoutes = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
-      
-      {/* User Routes */}
-      <Route 
-        element={
-          <ProtectedRoute
-            isAllowed={!!user && user.role === 'user'}
-            redirectPath="/login"
-          >
-            <UserLayout />
-          </ProtectedRoute>
-        }
-      >
+        {/* User Routes */}      
+      <Route element={<UserLayout />}>
         <Route path="/dashboard" element={<UserDashboardPage />} />
         <Route path="/new-complaint" element={<NewComplaintPage />} />
         <Route path="/complaints" element={<ComplaintHistoryPage />} />
         <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
-      
-      {/* Admin Routes */}
-      <Route 
-        element={
-          <ProtectedRoute
-            isAllowed={!!user && user.role === 'admin'}
-            redirectPath="/login"
-          >
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
+        {/* Admin Routes */}
+      <Route element={<AdminLayout />}>
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/complaints" element={<ComplaintsPage />} />
         <Route path="/admin/staff" element={<StaffPage />} />
@@ -77,14 +57,6 @@ const AppRoutes = () => {
         <Route path="/admin/categories" element={<CategoriesPage />} />
         <Route path="/admin/users" element={<UsersPage />} />
       </Route>
-      
-      {/* Redirect based on role */}
-      <Route path="/" element={
-        <Navigate to={
-          !user ? "/login" : 
-          user.role === 'admin' ? "/admin/dashboard" : "/dashboard"
-        } replace />
-      } />
       
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -94,6 +66,13 @@ const AppRoutes = () => {
 
 // Protected Route component
 const ProtectedRoute = ({ isAllowed, redirectPath, children }) => {
+  const { isInitialized } = useAuth();
+  
+  // Show nothing until auth is initialized
+  if (!isInitialized) {
+    return <div className="loading">Loading...</div>;
+  }
+  
   if (!isAllowed) {
     return <Navigate to={redirectPath} replace />;
   }

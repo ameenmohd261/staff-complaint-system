@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Form, Input, Select, Button, Upload, Card, 
   Typography, message, Divider, Space 
@@ -9,6 +9,8 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { complaintService } from '../../services/complaintService';
 import styled from 'styled-components';
 
 const { Title, Text } = Typography;
@@ -26,36 +28,108 @@ const FormHeader = styled.div`
 
 const NewComplaintPage = () => {
   const { categories, addComplaint } = useApp();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
+  const [manualCategories, setManualCategories] = useState([]);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      message.warning('Please log in to submit a complaint');
+      navigate('/login', { state: { from: '/new-complaint' } });
+      return;
+    }
+  }, [user, navigate]);
+  
+  // Don't render the form if user is not authenticated
+  if (!user) {
+    return <div>Redirecting to login...</div>;
+  }
+  
+  // Debug categories
+  console.log('Categories in NewComplaintPage:', categories);
+  console.log('Categories type:', typeof categories);
+  console.log('Categories is array:', Array.isArray(categories));
+  console.log('Current user:', user);
+  
+  // Manual category fetch as fallback
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        console.log('NewComplaintPage: Manually fetching categories...');
+        const data = await complaintService.getAllCategories();
+        console.log('NewComplaintPage: Manual fetch result:', data);
+        setManualCategories(data || []);
+      } catch (error) {
+        console.error('NewComplaintPage: Manual fetch error:', error);
+        setManualCategories([]);
+      }
+    };
+    
+    // If categories from context are not available, fetch manually
+    if (!categories || !Array.isArray(categories) || categories.length === 0) {
+      fetchCategories();
+    }
+  }, [categories]);
+    // Use categories from context or fallback to manual fetch
+  const availableCategories = React.useMemo(() => {
+    const sourceCategories = (Array.isArray(categories) && categories.length > 0) 
+      ? categories 
+      : manualCategories;
+      
+    if (!Array.isArray(sourceCategories)) {
+      console.log('Categories is not an array:', sourceCategories);
+      return [];
+    }
+    
+    const mapped = sourceCategories.map(category => ({
+      id: category._id,
+      _id: category._id,
+      name: category.name,
+      description: category.description
+    }));
+    
+    console.log('Source categories:', sourceCategories);
+    console.log('Available categories for dropdown:', mapped);
+    return mapped;
+  }, [categories, manualCategories]);
   
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      // Convert fileList to attachments array
-      const attachments = fileList.map(file => ({
-        name: file.name,
-        url: URL.createObjectURL(file.originFileObj),
-        type: file.type
-      }));
+      // Get file objects for API upload
+      const attachments = fileList.map(file => file.originFileObj);
       
-      // Create new complaint
-      const newComplaint = await addComplaint({
+      // Prepare the complaint data
+      const complaintData = {
         ...values,
-        attachments,
         priority: values.priority || 'Medium'
-      });
+      };
+      
+      // Log the data being submitted
+      console.log('Submitting complaint data:', complaintData);
+      console.log('Category value being sent:', complaintData.category);
+      
+      // Only add attachments if files were uploaded
+      if (attachments.length > 0) {
+        complaintData.attachments = attachments;
+      }
+        // Create new complaint
+      const newComplaint = await addComplaint(complaintData);
+      console.log('Complaint created successfully:', newComplaint);
       
       message.success('Complaint submitted successfully!');
       form.resetFields();
       setFileList([]);
       
-      // Navigate to the detail view of the new complaint
-      navigate(`/complaints/${newComplaint.id}`);
+      // Navigate to complaint history page instead of detail view
+      navigate('/complaints');
     } catch (error) {
-      message.error('Failed to submit complaint: ' + error.message);
+      console.error('Failed to submit complaint:', error);
+      message.error('Failed to submit complaint: ' + (error.message || 'An unexpected error occurred'));
     } finally {
       setLoading(false);
     }
@@ -95,21 +169,23 @@ const NewComplaintPage = () => {
               { required: true, message: 'Please enter the subject of your complaint' },
               { max: 100, message: 'Subject should not exceed 100 characters' }
             ]}
-          >
-            <Input placeholder="Brief description of your complaint" />
+          >            <Input placeholder="Brief description of your complaint" />
           </Form.Item>
 
           <Form.Item
-            name="categoryId"
+            name="category"
             label="Category"
             rules={[{ required: true, message: 'Please select a category' }]}
-          >
-            <Select placeholder="Select a category">
-              {categories.map(category => (
-                <Option key={category.id} value={category.id}>
-                  {category.name}
-                </Option>
-              ))}
+          >            <Select placeholder="Select a category">
+              {availableCategories.length > 0 ? (
+                availableCategories.map(category => (
+                  <Option key={category.id} value={category._id}>
+                    {category.name}
+                  </Option>
+                ))
+              ) : (
+                <Option value="" disabled>No categories available</Option>
+              )}
             </Select>
           </Form.Item>
 

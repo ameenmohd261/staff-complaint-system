@@ -52,12 +52,11 @@ const ComplaintDetailPage = () => {
   const [satisfaction, setSatisfaction] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
-  useEffect(() => {
+    useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get complaint details
-        const complaintData = complaints.find(c => c.id === id);
+        // Get complaint details directly from API
+        const complaintData = await complaintService.getComplaintById(id);
         
         if (!complaintData) {
           setLoading(false);
@@ -75,21 +74,47 @@ const ComplaintDetailPage = () => {
         setComments(commentsData);
         setStatusHistory(historyData);
         setSatisfaction(complaintData.satisfaction || 0);
-        
-        // Get user data for comments and status updates
+          // Users should now be included in the API responses
+        // But let's fetch any that might be missing
         const userIds = new Set();
-        commentsData.forEach(c => userIds.add(c.userId));
-        historyData.forEach(h => userIds.add(h.updatedBy));
+        const usersData = {};
         
-        if (complaintData.assignedTo) {
+        // Add users from comments
+        commentsData.forEach(c => {
+          if (c.user) {
+            usersData[c.user._id] = c.user;
+          } else if (c.userId) {
+            userIds.add(c.userId);
+          }
+        });
+        
+        // Add users from history
+        historyData.forEach(h => {
+          if (h.user) {
+            usersData[h.user._id] = h.user;
+          } else if (h.updatedBy) {
+            userIds.add(h.updatedBy);
+          }
+        });
+        
+        // Add assigned user
+        if (complaintData.assignedTo && typeof complaintData.assignedTo === 'string') {
           userIds.add(complaintData.assignedTo);
+        } else if (complaintData.assignedUser) {
+          usersData[complaintData.assignedUser._id] = complaintData.assignedUser;
         }
         
-        const usersData = {};
+        // Fetch any missing users
         for (const userId of userIds) {
-          const userData = await userService.getUserById(userId);
-          if (userData) {
-            usersData[userId] = userData;
+          if (!usersData[userId]) {
+            try {
+              const userData = await userService.getUserById(userId);
+              if (userData) {
+                usersData[userId] = userData;
+              }
+            } catch (error) {
+              console.error(`Failed to fetch user ${userId}:`, error);
+            }
           }
         }
         

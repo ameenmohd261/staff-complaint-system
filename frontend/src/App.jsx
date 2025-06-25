@@ -1,21 +1,20 @@
 import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
+import { App as AntdApp } from 'antd';
 import AppRoutes from './routes';
-import { useAuth } from './contexts/AuthContext';
-// import 'antd/dist/reset.css';
+import AuthMiddleware from './components/AuthMiddleware';
 import './assets/styles/App.css';
+import './assets/styles/loading.css';
 
 function App() {
-  const { isInitialized } = useAuth();
-
-  if (!isInitialized) {
-    return <div className="app-loading">Loading...</div>;
-  }
-
   return (
-    <Router>
-      <AppRoutes />
-    </Router>
+    <AntdApp>
+      <Router>
+        <AuthMiddleware>
+          <AppRoutes />
+        </AuthMiddleware>
+      </Router>
+    </AntdApp>
   );
 }
 

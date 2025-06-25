@@ -1,93 +1,72 @@
-import { v4 as uuidv4 } from 'uuid';
-import storageService from './storageService';
-
-// Keys for localStorage
-const USERS_KEY = 'complaint_management_users';
+import api from './apiService';
 
 export const userService = {
   // Get all users
   getAllUsers: async () => {
-    const users = storageService.getItem(USERS_KEY) || [];
-    // Return users without passwords
-    return users.map(({ password, ...user }) => user);
+    try {
+      const response = await api.get('/users');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch users');
+    }
   },
-
-  // Get all staff members
+  
+  // Get all staff members (employees and admins)
   getAllStaff: async () => {
-    const users = storageService.getItem(USERS_KEY) || [];
-    // Return staff and admin users without passwords
-    return users
-      .filter(user => user.role === 'staff' || user.role === 'admin')
-      .map(({ password, ...user }) => user);
+    try {
+      // Get employees with role filter
+      const response = await api.get('/users', {
+        params: { role: 'employee,admin' }
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch employees');
+    }
   },
-
   // Get user by ID
   getUserById: async (id) => {
-    const users = storageService.getItem(USERS_KEY) || [];
-    const user = users.find(u => u.id === id);
-    
-    if (!user) return null;
-    
-    // Return user without password
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
-  },
-
-  // Create staff member
-  createStaff: async (userData) => {
-    const users = storageService.getItem(USERS_KEY) || [];
-    
-    // Check if email already exists
-    if (users.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
-      throw new Error('Email already in use');
-    }
-    
-    const newUser = {
-      id: uuidv4(),
-      ...userData,
-      role: userData.role || 'staff', // Default role is staff
-      createdAt: new Date().toISOString()
-    };
-    
-    // Add to users array
-    users.push(newUser);
-    storageService.setItem(USERS_KEY, users);
-    
-    // Return user without password
-    const { password, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
-  },
-
-  // Update staff member
-  updateStaff: async (id, userData) => {
-    const users = storageService.getItem(USERS_KEY) || [];
-    
-    // Update user in users array
-    const updatedUsers = users.map(user => {
-      if (user.id === id) {
-        return { ...user, ...userData };
+    try {
+      const response = await api.get(`/users/${id}`);
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return null;
       }
-      return user;
-    });
-    
-    storageService.setItem(USERS_KEY, updatedUsers);
-    
-    // Return updated user without password
-    const updatedUser = updatedUsers.find(u => u.id === id);
-    if (!updatedUser) throw new Error('User not found');
-    
-    const { password, ...userWithoutPassword } = updatedUser;
-    return userWithoutPassword;
+      throw new Error(error.response?.data?.message || 'Failed to fetch user');
+    }
   },
 
-  // Delete staff member
+  // Create staff member (employee)
+  createStaff: async (userData) => {
+    try {
+      // Set default role to employee if not specified
+      if (!userData.role) {
+        userData.role = 'employee';
+      }
+      
+      const response = await api.post('/users', userData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to create employee');
+    }
+  },
+  // Update staff member (employee)
+  updateStaff: async (id, userData) => {
+    try {
+      const response = await api.put(`/users/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update employee');
+    }
+  },
+
+  // Delete staff member (employee)
   deleteStaff: async (id) => {
-    const users = storageService.getItem(USERS_KEY) || [];
-    
-    // Remove user from users array
-    const filteredUsers = users.filter(user => user.id !== id);
-    storageService.setItem(USERS_KEY, filteredUsers);
-    
-    return true;
+    try {
+      await api.delete(`/users/${id}`);
+      return true;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to delete employee');
+    }
   }
 };

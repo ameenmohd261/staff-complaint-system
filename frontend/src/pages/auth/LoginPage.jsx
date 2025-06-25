@@ -24,15 +24,24 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  
-  const onFinish = async (values) => {
+    const onFinish = async (values) => {
     setLoading(true);
     try {
       const user = await login(values.email, values.password);
-      message.success('Login successful!');
+      
+      // Use setTimeout to avoid the antd warning
+      setTimeout(() => {
+        message.success('Login successful!');
+      }, 100);
+      
       navigate(user.role === 'admin' ? '/admin/dashboard' : '/dashboard');
     } catch (error) {
-      message.error(error.message || 'Login failed. Please check your credentials.');
+      console.error('Login error:', error);
+      
+      // Use setTimeout to avoid the antd warning
+      setTimeout(() => {
+        message.error(error.message || 'Login failed. Please check your credentials.');
+      }, 100);
     } finally {
       setLoading(false);
     }

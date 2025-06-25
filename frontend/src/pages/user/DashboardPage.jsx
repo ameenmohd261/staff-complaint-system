@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Statistic, List, Tag, Button, Typography, Divider, Space } from 'antd';
+import { Row, Col, Card, Statistic, List, Tag, Button, Typography, Divider, Space, Spin } from 'antd';
 import { FileTextOutlined, ClockCircleOutlined, CheckCircleOutlined, FileAddOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { complaintService } from '../../services/complaintService';
 import styled from 'styled-components';
 import moment from 'moment';
 
@@ -28,19 +29,53 @@ const StatusTag = styled(Tag)`
 `;
 
 const DashboardPage = () => {
-  const { complaints, categories, statuses, loading } = useApp();
+  const { categories, statuses } = useApp();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [userComplaints, setUserComplaints] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalComplaints: 0,
+    activeComplaints: 0,
+    resolvedComplaints: 0
+  });
   
-  // Filter complaints for current user
-  const userComplaints = complaints.filter(complaint => complaint.userId === user.id);
+  // Fetch user dashboard data from API
+  useEffect(() => {
+    const fetchUserDashboard = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch user complaints and dashboard stats in parallel
+        const [userComplaintsData, stats] = await Promise.all([
+          complaintService.getUserComplaints(user.id),
+          complaintService.getDashboardStats('user', user.id)
+        ]);
+        
+        setUserComplaints(userComplaintsData);
+        setDashboardStats({
+          totalComplaints: stats.totalComplaints || 0,
+          activeComplaints: stats.activeComplaints || 0,
+          resolvedComplaints: stats.resolvedComplaints || 0
+        });
+      } catch (error) {
+        console.error('Error fetching user dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (user && user.id) {
+      fetchUserDashboard();
+    }
+  }, [user]);
   
-  // Calculate statistics
-  const totalComplaints = userComplaints.length;
-  const activeComplaints = userComplaints.filter(
+  // Use stats from API or calculate if not available
+  const totalComplaints = dashboardStats.totalComplaints || userComplaints.length;
+  const activeComplaints = dashboardStats.activeComplaints || userComplaints.filter(
     complaint => complaint.status !== '4' && complaint.status !== '5'
   ).length;
-  const resolvedComplaints = userComplaints.filter(
+  const resolvedComplaints = dashboardStats.resolvedComplaints || userComplaints.filter(
     complaint => complaint.status === '4' || complaint.status === '5'
   ).length;
   

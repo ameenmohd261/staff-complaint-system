@@ -1,378 +1,240 @@
-import { v4 as uuidv4 } from 'uuid';
-import storageService from './storageService';
-
-// Keys for localStorage
-const COMPLAINTS_KEY = 'complaint_management_complaints';
-const CATEGORIES_KEY = 'complaint_management_categories';
-const STATUSES_KEY = 'complaint_management_statuses';
-const COMMENTS_KEY = 'complaint_management_comments';
-const STATUS_HISTORY_KEY = 'complaint_management_status_history';
-
-// Initialize demo data if not exist
-const initializeDemoData = () => {
-  // Initialize categories
-  if (!storageService.getItem(CATEGORIES_KEY)) {
-    const demoCategories = [
-      { id: '1', name: 'Technical Issue', description: 'Problems with software or hardware' },
-      { id: '2', name: 'Billing Problem', description: 'Issues related to billing or payments' },
-      { id: '3', name: 'Service Quality', description: 'Complaints about service quality' },
-      { id: '4', name: 'Product Defect', description: 'Issues with product functionality' },
-      { id: '5', name: 'Customer Service', description: 'Complaints about staff behavior or service' }
-    ];
-    storageService.setItem(CATEGORIES_KEY, demoCategories);
-  }
-
-  // Initialize statuses
-  if (!storageService.getItem(STATUSES_KEY)) {
-    const demoStatuses = [
-      { id: '1', name: 'New', color: '#1890ff' },
-      { id: '2', name: 'In Progress', color: '#faad14' },
-      { id: '3', name: 'Pending Customer', color: '#722ed1' },
-      { id: '4', name: 'Resolved', color: '#52c41a' },
-      { id: '5', name: 'Closed', color: '#d9d9d9' },
-      { id: '6', name: 'Reopened', color: '#f5222d' }
-    ];
-    storageService.setItem(STATUSES_KEY, demoStatuses);
-  }
-
-  // Initialize complaints
-  if (!storageService.getItem(COMPLAINTS_KEY)) {
-    const currentDate = new Date();
-    const demoComplaints = [
-      {
-        id: '1',
-        userId: '2', // John Doe
-        categoryId: '1',
-        subject: 'Website is not loading properly',
-        description: 'I am unable to access the website. It keeps showing error 500.',
-        status: '1', // New
-        priority: 'High',
-        createdAt: new Date(currentDate - 86400000 * 2).toISOString(), // 2 days ago
-        updatedAt: new Date(currentDate - 86400000 * 2).toISOString(),
-        assignedTo: null,
-        attachments: []
-      },
-      {
-        id: '2',
-        userId: '2', // John Doe
-        categoryId: '2',
-        subject: 'Double charged for monthly subscription',
-        description: 'I was charged twice for my monthly subscription on May 15.',
-        status: '2', // In Progress
-        priority: 'Medium',
-        createdAt: new Date(currentDate - 86400000 * 5).toISOString(), // 5 days ago
-        updatedAt: new Date(currentDate - 86400000 * 3).toISOString(), // 3 days ago
-        assignedTo: '3', // Support Staff
-        attachments: []
-      },
-      {
-        id: '3',
-        userId: '2', // John Doe
-        categoryId: '5',
-        subject: 'Rude customer service representative',
-        description: 'The support staff was very rude when I called about my issue.',
-        status: '4', // Resolved
-        priority: 'Low',
-        createdAt: new Date(currentDate - 86400000 * 10).toISOString(), // 10 days ago
-        updatedAt: new Date(currentDate - 86400000 * 8).toISOString(), // 8 days ago
-        assignedTo: '3', // Support Staff
-        attachments: [],
-        satisfaction: 4
-      }
-    ];
-    storageService.setItem(COMPLAINTS_KEY, demoComplaints);
-
-    // Initialize status history
-    const demoStatusHistory = [
-      {
-        id: '1',
-        complaintId: '1',
-        status: '1', // New
-        timestamp: new Date(currentDate - 86400000 * 2).toISOString(),
-        updatedBy: '2' // John Doe (self)
-      },
-      {
-        id: '2',
-        complaintId: '2',
-        status: '1', // New
-        timestamp: new Date(currentDate - 86400000 * 5).toISOString(),
-        updatedBy: '2' // John Doe (self)
-      },
-      {
-        id: '3',
-        complaintId: '2',
-        status: '2', // In Progress
-        timestamp: new Date(currentDate - 86400000 * 3).toISOString(),
-        updatedBy: '3' // Support Staff
-      },
-      {
-        id: '4',
-        complaintId: '3',
-        status: '1', // New
-        timestamp: new Date(currentDate - 86400000 * 10).toISOString(),
-        updatedBy: '2' // John Doe (self)
-      },
-      {
-        id: '5',
-        complaintId: '3',
-        status: '2', // In Progress
-        timestamp: new Date(currentDate - 86400000 * 9).toISOString(),
-        updatedBy: '3' // Support Staff
-      },
-      {
-        id: '6',
-        complaintId: '3',
-        status: '4', // Resolved
-        timestamp: new Date(currentDate - 86400000 * 8).toISOString(),
-        updatedBy: '3' // Support Staff
-      }
-    ];
-    storageService.setItem(STATUS_HISTORY_KEY, demoStatusHistory);
-
-    // Initialize comments
-    const demoComments = [
-      {
-        id: '1',
-        complaintId: '2',
-        userId: '3', // Support Staff
-        comment: 'We are looking into this issue and will get back to you soon.',
-        timestamp: new Date(currentDate - 86400000 * 4).toISOString() // 4 days ago
-      },
-      {
-        id: '2',
-        complaintId: '2',
-        userId: '2', // John Doe
-        comment: 'Thank you. I appreciate your help.',
-        timestamp: new Date(currentDate - 86400000 * 3.9).toISOString() // 3.9 days ago
-      },
-      {
-        id: '3',
-        complaintId: '3',
-        userId: '3', // Support Staff
-        comment: 'I apologize for the poor experience. We have addressed this with our team.',
-        timestamp: new Date(currentDate - 86400000 * 8.5).toISOString() // 8.5 days ago
-      }
-    ];
-    storageService.setItem(COMMENTS_KEY, demoComments);
-  }
-};
-
-// Initialize demo data
-initializeDemoData();
+import api from './apiService';
 
 export const complaintService = {
-  // Get all complaints
+  // Complaint CRUD operations
   getAllComplaints: async () => {
-    return storageService.getItem(COMPLAINTS_KEY) || [];
+    try {
+      const response = await api.get('/complaints');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching complaints:', error);
+      throw error;
+    }
   },
-
-  // Get complaint by ID
+  
+  getUserComplaints: async (userId) => {
+    try {
+      const response = await api.get(`/complaints/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user complaints:', error);
+      throw error;
+    }
+  },
+  
   getComplaintById: async (id) => {
-    const complaints = storageService.getItem(COMPLAINTS_KEY) || [];
-    return complaints.find(c => c.id === id);
-  },
-
-  // Get complaints by user ID
-  getComplaintsByUserId: async (userId) => {
-    const complaints = storageService.getItem(COMPLAINTS_KEY) || [];
-    return complaints.filter(c => c.userId === userId);
-  },
-
-  // Create new complaint
-  createComplaint: async (complaintData) => {
-    const complaints = storageService.getItem(COMPLAINTS_KEY) || [];
-    const currentUser = storageService.getItem('complaint_management_user');
-    
-    if (!currentUser) {
-      throw new Error('User not authenticated');
+    try {
+      const response = await api.get(`/complaints/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching complaint ${id}:`, error);
+      throw error;
     }
-
-    const newComplaint = {
-      id: uuidv4(),
-      userId: currentUser.id,
-      status: '1', // Default to 'New'
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      assignedTo: null,
-      attachments: [],
-      ...complaintData
-    };
-
-    complaints.push(newComplaint);
-    storageService.setItem(COMPLAINTS_KEY, complaints);
-
-    // Add status history
-    const statusHistory = storageService.getItem(STATUS_HISTORY_KEY) || [];
-    const newStatusHistory = {
-      id: uuidv4(),
-      complaintId: newComplaint.id,
-      status: newComplaint.status,
-      timestamp: newComplaint.createdAt,
-      updatedBy: currentUser.id
-    };
-    statusHistory.push(newStatusHistory);
-    storageService.setItem(STATUS_HISTORY_KEY, statusHistory);
-
-    return newComplaint;
   },
-
-  // Update complaint
-  updateComplaint: async (id, complaintData) => {
-    const complaints = storageService.getItem(COMPLAINTS_KEY) || [];
-    const currentUser = storageService.getItem('complaint_management_user');
-    
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-
-    let statusChanged = false;
-    let oldStatus = '';
-    let newStatus = '';
-
-    const updatedComplaints = complaints.map(complaint => {
-      if (complaint.id === id) {
-        if (complaintData.status && complaint.status !== complaintData.status) {
-          statusChanged = true;
-          oldStatus = complaint.status;
-          newStatus = complaintData.status;
+    createComplaint: async (complaintData) => {
+    try {
+      // Log the complaint data being sent for debugging
+      console.log('Creating complaint with data:', complaintData);
+      
+      // Handle file uploads if included in the complaint data
+      if (complaintData.attachments) {
+        const formData = new FormData();
+        
+        // Append all fields to formData
+        Object.keys(complaintData).forEach(key => {
+          if (key !== 'attachments') {
+            console.log(`Adding form field: ${key} = ${complaintData[key]}`);
+            formData.append(key, complaintData[key]);
+          }
+        });
+        
+        // Append files
+        if (complaintData.attachments.length > 0) {
+          for (let i = 0; i < complaintData.attachments.length; i++) {
+            formData.append('attachments', complaintData.attachments[i]);
+          }
         }
-
-        return {
-          ...complaint,
-          ...complaintData,
-          updatedAt: new Date().toISOString()
-        };
+        
+        console.log('Sending form data to API');
+        const response = await api.post('/complaints', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        console.log('Response from API:', response.data);
+        return response.data;
+      } else {
+        // Regular JSON request if no attachments
+        console.log('Sending JSON data to API');
+        const response = await api.post('/complaints', complaintData);
+        console.log('Response from API:', response.data);
+        return response.data;
       }
-      return complaint;
-    });
-
-    storageService.setItem(COMPLAINTS_KEY, updatedComplaints);
-
-    // If status changed, add to status history
-    if (statusChanged) {
-      const statusHistory = storageService.getItem(STATUS_HISTORY_KEY) || [];
-      const newStatusHistory = {
-        id: uuidv4(),
-        complaintId: id,
-        status: newStatus,
-        timestamp: new Date().toISOString(),
-        updatedBy: currentUser.id
-      };
-      statusHistory.push(newStatusHistory);
-      storageService.setItem(STATUS_HISTORY_KEY, statusHistory);
+    } catch (error) {
+      console.error('Error creating complaint:', error);
+      throw error;
     }
-
-    return updatedComplaints.find(c => c.id === id);
   },
-
-  // Delete complaint
+  
+  updateComplaint: async (id, complaintData) => {
+    try {
+      const response = await api.put(`/complaints/${id}`, complaintData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating complaint ${id}:`, error);
+      throw error;
+    }
+  },
+  
   deleteComplaint: async (id) => {
-    const complaints = storageService.getItem(COMPLAINTS_KEY) || [];
-    const filteredComplaints = complaints.filter(c => c.id !== id);
-    storageService.setItem(COMPLAINTS_KEY, filteredComplaints);
-
-    // Delete related data
-    const comments = storageService.getItem(COMMENTS_KEY) || [];
-    const filteredComments = comments.filter(c => c.complaintId !== id);
-    storageService.setItem(COMMENTS_KEY, filteredComments);
-
-    const statusHistory = storageService.getItem(STATUS_HISTORY_KEY) || [];
-    const filteredStatusHistory = statusHistory.filter(s => s.complaintId !== id);
-    storageService.setItem(STATUS_HISTORY_KEY, filteredStatusHistory);
-
-    return true;
-  },
-
-  // Get all categories
-  getAllCategories: async () => {
-    return storageService.getItem(CATEGORIES_KEY) || [];
-  },
-
-  // Create category
-  createCategory: async (categoryData) => {
-    const categories = storageService.getItem(CATEGORIES_KEY) || [];
-    
-    const newCategory = {
-      id: uuidv4(),
-      ...categoryData
-    };
-
-    categories.push(newCategory);
-    storageService.setItem(CATEGORIES_KEY, categories);
-
-    return newCategory;
-  },
-
-  // Update category
-  updateCategory: async (id, categoryData) => {
-    const categories = storageService.getItem(CATEGORIES_KEY) || [];
-    
-    const updatedCategories = categories.map(category => {
-      if (category.id === id) {
-        return { ...category, ...categoryData };
-      }
-      return category;
-    });
-
-    storageService.setItem(CATEGORIES_KEY, updatedCategories);
-    return updatedCategories.find(c => c.id === id);
-  },
-
-  // Delete category
-  deleteCategory: async (id) => {
-    const categories = storageService.getItem(CATEGORIES_KEY) || [];
-    const filteredCategories = categories.filter(c => c.id !== id);
-    storageService.setItem(CATEGORIES_KEY, filteredCategories);
-    return true;
-  },
-
-  // Get all statuses
-  getAllStatuses: async () => {
-    return storageService.getItem(STATUSES_KEY) || [];
-  },
-
-  // Get status history for a complaint
-  getStatusHistory: async (complaintId) => {
-    const statusHistory = storageService.getItem(STATUS_HISTORY_KEY) || [];
-    return statusHistory.filter(s => s.complaintId === complaintId);
-  },
-
-  // Get comments for a complaint
-  getComments: async (complaintId) => {
-    const comments = storageService.getItem(COMMENTS_KEY) || [];
-    return comments.filter(c => c.complaintId === complaintId);
-  },
-
-  // Add comment to a complaint
-  addComment: async (complaintId, comment) => {
-    const comments = storageService.getItem(COMMENTS_KEY) || [];
-    const currentUser = storageService.getItem('complaint_management_user');
-    
-    if (!currentUser) {
-      throw new Error('User not authenticated');
+    try {
+      await api.delete(`/complaints/${id}`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting complaint ${id}:`, error);
+      throw error;
     }
-
-    const newComment = {
-      id: uuidv4(),
-      complaintId,
-      userId: currentUser.id,
-      comment,
-      timestamp: new Date().toISOString()
-    };
-
-    comments.push(newComment);
-    storageService.setItem(COMMENTS_KEY, comments);
-
-    // Update the complaint's updatedAt timestamp
-    const complaints = storageService.getItem(COMPLAINTS_KEY) || [];
-    const updatedComplaints = complaints.map(c => {
-      if (c.id === complaintId) {
-        return { ...c, updatedAt: new Date().toISOString() };
-      }
-      return c;
-    });
-    storageService.setItem(COMPLAINTS_KEY, updatedComplaints);
-
-    return newComment;
+  },
+  
+  // Status operations
+  updateComplaintStatus: async (id, statusId, remarks) => {
+    try {
+      const response = await api.put(`/complaints/${id}/status`, { status: statusId, remarks });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating complaint ${id} status:`, error);
+      throw error;
+    }
+  },
+  
+  getStatusHistory: async (complaintId) => {
+    try {
+      const response = await api.get(`/complaints/${complaintId}/status-history`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error getting status history for complaint ${complaintId}:`, error);
+      throw error;
+    }
+  },
+  
+  getAllStatuses: async () => {
+    try {
+      const response = await api.get('/statuses');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching statuses:', error);
+      throw error;
+    }
+  },
+  
+  // Assignment operations
+  assignComplaint: async (id, staffId) => {
+    try {
+      const response = await api.put(`/complaints/${id}/assign`, { staffId });
+      return response.data;
+    } catch (error) {
+      console.error(`Error assigning complaint ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Comment operations
+  getComments: async (complaintId) => {
+    try {
+      const response = await api.get(`/complaints/${complaintId}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching comments for complaint ${complaintId}:`, error);
+      throw error;
+    }
+  },
+  
+  addComment: async (complaintId, content) => {
+    try {
+      const response = await api.post(`/complaints/${complaintId}/comments`, { content });
+      return response.data;
+    } catch (error) {
+      console.error(`Error adding comment to complaint ${complaintId}:`, error);
+      throw error;
+    }
+  },
+    // Category operations
+  getAllCategories: async () => {
+    try {
+      const response = await api.get('/categories');
+      console.log('Categories received from API:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+  },
+  
+  createCategory: async (categoryData) => {
+    try {
+      const response = await api.post('/categories', categoryData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating category:', error);
+      throw error;
+    }
+  },
+  
+  updateCategory: async (id, categoryData) => {
+    try {
+      const response = await api.put(`/categories/${id}`, categoryData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating category ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  deleteCategory: async (id) => {
+    try {
+      await api.delete(`/categories/${id}`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting category ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Dashboard data
+  getDashboardStats: async (userType, userId = null) => {
+    try {
+      const endpoint = userId 
+        ? `/dashboard/${userType}/${userId}` 
+        : `/dashboard/${userType}`;
+        
+      const response = await api.get(endpoint);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  },
+  
+  // Reports data for admin dashboard
+  getReportData: async (filters = {}) => {
+    try {
+      const response = await api.get('/reports/data', { params: filters });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+      throw error;
+    }
+  },
+  
+  // My Complaints
+  getMyComplaints: async () => {
+    try {
+      const response = await api.get('/complaints/my');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching my complaints:', error);
+      throw error;
+    }
   }
 };

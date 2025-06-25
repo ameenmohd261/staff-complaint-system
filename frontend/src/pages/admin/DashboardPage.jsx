@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
+import { complaintService } from '../../services/complaintService';
 import styled from 'styled-components';
 import moment from 'moment';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
@@ -46,8 +47,44 @@ const ChartContainer = styled.div`
 `;
 
 const DashboardPage = () => {
-  const { complaints, categories, statuses, staffMembers, loading } = useApp();
+  const { categories, statuses, staffMembers, loading: appLoading } = useApp();
+  const [complaints, setComplaints] = useState([]);
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState(null); // For date range filtering
   const navigate = useNavigate();
+    // Fetch dashboard data from the API
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all complaints and dashboard stats in parallel
+        const [complaintsData, dashboardStats] = await Promise.all([
+          complaintService.getAllComplaints(),
+          complaintService.getDashboardStats('admin')
+        ]);
+        
+        setComplaints(complaintsData);
+        
+        // Fetch report data for charts with date filter if provided
+        const dateParams = dateFilter ? {
+          startDate: dateFilter[0].toISOString(),
+          endDate: dateFilter[1].toISOString()
+        } : {};
+        
+        const reportData = await complaintService.getReportData(dateParams);
+        setReportData(reportData);
+        
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, [dateFilter]);
   
   const [dateRange, setDateRange] = useState([
     moment().subtract(30, 'days'), 
